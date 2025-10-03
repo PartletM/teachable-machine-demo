@@ -2,32 +2,50 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Thumbs Demo</title>
+  <title>Thumbs Up / Down Demo</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; margin-top: 20px; }
-    video, canvas { border: 4px solid #333; border-radius: 10px; transition: border-color 0.3s ease; }
-    #label-container { margin-top: 20px; font-size: 28px; font-weight: bold; transition: color 0.3s ease; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 20px;
+    }
+    video, canvas {
+      border: 4px solid #333;
+      border-radius: 10px;
+      transition: border-color 0.3s ease;
+    }
+    #label-container {
+      margin-top: 20px;
+      font-size: 28px;
+      font-weight: bold;
+      transition: color 0.3s ease;
+    }
   </style>
 </head>
 <body>
-  <h1>Thumbs Up / Down Demo</h1>
+  <h1>Teachable Machine Thumbs Demo</h1>
   <video id="webcam" autoplay playsinline width="300" height="225"></video>
   <div id="label-container">Loading model...</div>
 
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
-
+  <!-- ✅ Correct libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
 
   <script>
-    const modelURL = "https://partletm.github.io/teachable-machine-demo/model.json";
-    const metadataURL = "https://partletm.github.io/teachable-machine-demo/metadata.json";
+    // Absolute URLs to your GitHub Pages files
+    const baseURL = "https://partletm.github.io/teachable-machine-demo/";
+    const modelURL = baseURL + "model.json";
+    const metadataURL = baseURL + "metadata.json";
+
     let model, webcam, labelContainer;
 
     async function init() {
       try {
-        console.log("Loading model from:", modelURL, metadataURL);
+        console.log("Loading:", modelURL, metadataURL);
         model = await tmImage.load(modelURL, metadataURL);
+        console.log("✅ Model loaded!");
 
+        // Setup webcam
         webcam = new tmImage.Webcam(300, 225, true);
         await webcam.setup();
         await webcam.play();
@@ -50,10 +68,15 @@
 
     async function predict() {
       const prediction = await model.predict(webcam.canvas);
+
+      // Get best prediction
       let best = prediction.reduce((a, b) => a.probability > b.probability ? a : b);
       const percent = (best.probability * 100).toFixed(1);
 
+      // Show label + probability
       labelContainer.innerHTML = `${best.className} (${percent}%)`;
+
+      // Color-code result
       if (best.className === "Thumbs Up") {
         labelContainer.style.color = "green";
         webcam.canvas.style.borderColor = "green";
