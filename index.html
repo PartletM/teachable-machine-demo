@@ -15,54 +15,61 @@
   <div id="label-container">Loading model...</div>
 
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image"></script>
 
-  <script>
-    const modelURL = "https://partletm.github.io/teachable-machine-demo/model.json";
-    const metadataURL = "https://partletm.github.io/teachable-machine-demo/metadata.json";
-    let model, webcam, labelContainer;
+<script>
+  const baseURL = "https://partletm.github.io/teachable-machine-demo/";
+  const modelURL = baseURL + "model.json";
+  const metadataURL = baseURL + "metadata.json";
 
-    async function init() {
-      try {
-        console.log("Loading model from:", modelURL, metadataURL);
-        model = await tmImage.load(modelURL, metadataURL);
+  let model, webcam, labelContainer;
 
-        webcam = new tmImage.Webcam(300, 225, true);
-        await webcam.setup();
-        await webcam.play();
-        window.requestAnimationFrame(loop);
+  async function init() {
+    try {
+      console.log("Loading:", modelURL, metadataURL);
+      model = await tmImage.load(modelURL, metadataURL);
+      console.log("✅ Model loaded!");
 
-        document.getElementById("webcam").replaceWith(webcam.canvas);
-        labelContainer = document.getElementById("label-container");
-        labelContainer.innerHTML = "✅ Model loaded. Detecting...";
-      } catch (err) {
-        console.error("❌ Failed to load model:", err);
-        document.getElementById("label-container").innerText = "❌ Error loading model.";
-      }
-    }
-
-    async function loop() {
-      webcam.update();
-      await predict();
+      // Webcam setup
+      webcam = new tmImage.Webcam(300, 225, true);
+      await webcam.setup();
+      await webcam.play();
       window.requestAnimationFrame(loop);
+
+      document.getElementById("webcam").replaceWith(webcam.canvas);
+      labelContainer = document.getElementById("label-container");
+      labelContainer.innerHTML = "✅ Model loaded. Detecting...";
+    } catch (err) {
+      console.error("❌ Failed to load model:", err);
+      document.getElementById("label-container").innerText = "❌ Error loading model.";
     }
+  }
 
-    async function predict() {
-      const prediction = await model.predict(webcam.canvas);
-      let best = prediction.reduce((a, b) => a.probability > b.probability ? a : b);
-      const percent = (best.probability * 100).toFixed(1);
+  async function loop() {
+    webcam.update();
+    await predict();
+    window.requestAnimationFrame(loop);
+  }
 
-      labelContainer.innerHTML = `${best.className} (${percent}%)`;
-      if (best.className === "Thumbs Up") {
-        labelContainer.style.color = "green";
-        webcam.canvas.style.borderColor = "green";
-      } else {
-        labelContainer.style.color = "red";
-        webcam.canvas.style.borderColor = "red";
-      }
+  async function predict() {
+    const prediction = await model.predict(webcam.canvas);
+
+    let best = prediction.reduce((a, b) => a.probability > b.probability ? a : b);
+    const percent = (best.probability * 100).toFixed(1);
+
+    labelContainer.innerHTML = `${best.className} (${percent}%)`;
+
+    if (best.className === "Thumbs Up") {
+      labelContainer.style.color = "green";
+      webcam.canvas.style.borderColor = "green";
+    } else {
+      labelContainer.style.color = "red";
+      webcam.canvas.style.borderColor = "red";
     }
+  }
 
-    init();
-  </script>
+  init();
+</script>
 </body>
 </html>
+
