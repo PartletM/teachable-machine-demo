@@ -27,27 +27,31 @@
   <video id="webcam" autoplay playsinline width="300" height="225"></video>
   <div id="label-container">Loading model...</div>
 
+  <!-- Load TensorFlow.js and Teachable Machine libraries -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image"></script>
 
   <script>
-    const URL = "https://partletm.github.io/teachable-machine-demo/";
+    const modelURL = "./model.json";
+    const metadataURL = "./metadata.json";
     let model, webcam, labelContainer;
 
     async function init() {
       try {
-        const modelURL = URL + "model.json";
-        const metadataURL = URL + "metadata.json";
-
+        // Load model + metadata
         model = await tmImage.load(modelURL, metadataURL);
 
+        // Setup webcam
         const flip = true;
         webcam = new tmImage.Webcam(300, 225, flip);
         await webcam.setup();
         await webcam.play();
         window.requestAnimationFrame(loop);
 
+        // Replace <video> with webcam canvas
         document.getElementById("webcam").replaceWith(webcam.canvas);
+
+        // Label container
         labelContainer = document.getElementById("label-container");
         labelContainer.innerHTML = "✅ Model loaded. Detecting...";
       } catch (err) {
@@ -65,6 +69,7 @@
     async function predict() {
       const prediction = await model.predict(webcam.canvas);
 
+      // Find best prediction
       let best = prediction[0];
       for (let i = 1; i < prediction.length; i++) {
         if (prediction[i].probability > best.probability) {
@@ -75,6 +80,7 @@
       const percent = (best.probability * 100).toFixed(2);
       labelContainer.innerHTML = `${best.className}: ${percent}%`;
 
+      // Change color + border
       if (best.className === "Thumbs Up") {
         labelContainer.style.color = "green";
         webcam.canvas.style.borderColor = "green";
