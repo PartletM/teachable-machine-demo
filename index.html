@@ -51,6 +51,20 @@
       font-weight: bold;
       transition: color 0.3s ease;
     }
+    #confidence-bar {
+      width: 100%;
+      height: 15px;
+      margin-top: 10px;
+      border-radius: 8px;
+      background: #ddd;
+      overflow: hidden;
+    }
+    #confidence-fill {
+      height: 100%;
+      width: 0%;
+      background: green;
+      transition: width 0.3s ease, background 0.3s ease;
+    }
     button {
       margin-top: 15px;
       padding: 12px 20px;
@@ -82,6 +96,11 @@
     <video id="webcam" autoplay playsinline width="300" height="225" style="display:none;"></video>
     <div id="label-container">Model not started</div>
 
+    <!-- Confidence bar -->
+    <div id="confidence-bar">
+      <div id="confidence-fill"></div>
+    </div>
+
     <div class="btn-row">
       <button id="start-btn">▶ Start Camera</button>
       <button id="reset-btn">🔄 Reset</button>
@@ -98,7 +117,7 @@
     const modelURL = baseURL + "model.json";
     const metadataURL = baseURL + "metadata.json";
 
-    let model, webcam, labelContainer, startBtn, resetBtn, darkBtn, isDetecting = false;
+    let model, webcam, labelContainer, confidenceFill, startBtn, resetBtn, darkBtn, isDetecting = false;
 
     async function init() {
       try {
@@ -142,6 +161,7 @@
         video.playsInline = true;
         document.querySelector(".card").insertBefore(video, labelContainer);
         labelContainer.innerHTML = "Camera reset. Click Start again.";
+        confidenceFill.style.width = "0%";
         isDetecting = false;
       } catch (err) {
         console.error("Reset error:", err);
@@ -162,10 +182,15 @@
       const percent = (best.probability * 100).toFixed(1);
 
       labelContainer.innerHTML = `${best.className} (${percent}%)`;
+      
+      // Update confidence bar
+      confidenceFill.style.width = percent + "%";
       if (best.className === "Thumbs Up") {
+        confidenceFill.style.background = "green";
         labelContainer.style.color = "green";
         webcam.canvas.style.borderColor = "green";
       } else {
+        confidenceFill.style.background = "red";
         labelContainer.style.color = "red";
         webcam.canvas.style.borderColor = "red";
       }
@@ -178,6 +203,7 @@
     // Hook up buttons
     window.onload = () => {
       labelContainer = document.getElementById("label-container");
+      confidenceFill = document.getElementById("confidence-fill");
       startBtn = document.getElementById("start-btn");
       resetBtn = document.getElementById("reset-btn");
       darkBtn = document.getElementById("darkmode-btn");
