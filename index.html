@@ -10,8 +10,9 @@
       margin-top: 20px;
     }
     video, canvas {
-      border: 2px solid #333;
+      border: 4px solid #333;
       border-radius: 10px;
+      transition: border-color 0.3s ease;
     }
     #label-container {
       margin-top: 20px;
@@ -26,37 +27,27 @@
   <video id="webcam" autoplay playsinline width="300" height="225"></video>
   <div id="label-container">Loading model...</div>
 
-  <!-- TensorFlow.js + Teachable Machine libraries -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image"></script>
 
   <script>
-    const URL = "./"; // same folder as index.html
-    let model, webcam, labelContainer, maxPredictions, classLabels;
+    const URL = "https://partletm.github.io/teachable-machine-demo/";
+    let model, webcam, labelContainer;
 
     async function init() {
       try {
         const modelURL = URL + "model.json";
         const metadataURL = URL + "metadata.json";
 
-        // Load model + metadata
         model = await tmImage.load(modelURL, metadataURL);
-        maxPredictions = model.getTotalClasses();
 
-        // Get class labels from metadata.json
-        const metadata = await fetch(metadataURL).then(r => r.json());
-        classLabels = metadata.labels;
-
-        // Setup webcam
         const flip = true;
         webcam = new tmImage.Webcam(300, 225, flip);
         await webcam.setup();
         await webcam.play();
         window.requestAnimationFrame(loop);
 
-        // Replace video with webcam canvas
         document.getElementById("webcam").replaceWith(webcam.canvas);
-
         labelContainer = document.getElementById("label-container");
         labelContainer.innerHTML = "✅ Model loaded. Detecting...";
       } catch (err) {
@@ -74,7 +65,6 @@
     async function predict() {
       const prediction = await model.predict(webcam.canvas);
 
-      // Find top prediction
       let best = prediction[0];
       for (let i = 1; i < prediction.length; i++) {
         if (prediction[i].probability > best.probability) {
@@ -83,15 +73,14 @@
       }
 
       const percent = (best.probability * 100).toFixed(2);
-      const resultText = `${best.className}: ${percent}%`;
+      labelContainer.innerHTML = `${best.className}: ${percent}%`;
 
-      labelContainer.innerHTML = resultText;
-
-      // Color code
       if (best.className === "Thumbs Up") {
         labelContainer.style.color = "green";
+        webcam.canvas.style.borderColor = "green";
       } else {
         labelContainer.style.color = "red";
+        webcam.canvas.style.borderColor = "red";
       }
     }
 
