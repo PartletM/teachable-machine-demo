@@ -6,8 +6,30 @@
   <style>
     body {
       font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
       text-align: center;
-      margin-top: 20px;
+      width: 400px;
+    }
+    h1 {
+      margin-bottom: 10px;
+      font-size: 24px;
+      color: #2c3e50;
+    }
+    p {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 20px;
     }
     video, canvas {
       border: 4px solid #333;
@@ -16,47 +38,73 @@
     }
     #label-container {
       margin-top: 20px;
-      font-size: 28px;
+      font-size: 22px;
       font-weight: bold;
       transition: color 0.3s ease;
+    }
+    button {
+      margin-top: 20px;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      background: #2c3e50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #1a242f;
     }
   </style>
 </head>
 <body>
-  <h1>Teachable Machine Thumbs Demo</h1>
-  <video id="webcam" autoplay playsinline width="300" height="225"></video>
-  <div id="label-container">Loading model...</div>
+  <div class="card">
+    <h1>Thumbs Up / Down Demo</h1>
+    <p>Click the button below to start your camera and see real-time predictions.</p>
+    
+    <video id="webcam" autoplay playsinline width="300" height="225" style="display:none;"></video>
+    <div id="label-container">Model not started</div>
+    <button id="start-btn">Start Camera</button>
+  </div>
 
   <!-- ✅ Correct libraries -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
 
   <script>
-    // Absolute URLs to your GitHub Pages files
     const baseURL = "https://partletm.github.io/teachable-machine-demo/";
     const modelURL = baseURL + "model.json";
     const metadataURL = baseURL + "metadata.json";
 
-    let model, webcam, labelContainer;
+    let model, webcam, labelContainer, startBtn;
 
     async function init() {
       try {
         console.log("Loading:", modelURL, metadataURL);
         model = await tmImage.load(modelURL, metadataURL);
         console.log("✅ Model loaded!");
+        labelContainer.innerHTML = "✅ Model ready. Click Start Camera.";
+      } catch (err) {
+        console.error("❌ Failed to load model:", err);
+        labelContainer.innerText = "❌ Error loading model.";
+      }
+    }
 
-        // Setup webcam
+    async function startCamera() {
+      try {
         webcam = new tmImage.Webcam(300, 225, true);
         await webcam.setup();
         await webcam.play();
         window.requestAnimationFrame(loop);
 
         document.getElementById("webcam").replaceWith(webcam.canvas);
-        labelContainer = document.getElementById("label-container");
-        labelContainer.innerHTML = "✅ Model loaded. Detecting...";
+        labelContainer.innerHTML = "Detecting...";
+        startBtn.style.display = "none"; // hide button after starting
       } catch (err) {
-        console.error("❌ Failed to load model:", err);
-        document.getElementById("label-container").innerText = "❌ Error loading model.";
+        console.error("Camera error:", err);
+        labelContainer.innerText = "❌ Could not access camera.";
       }
     }
 
@@ -68,15 +116,10 @@
 
     async function predict() {
       const prediction = await model.predict(webcam.canvas);
-
-      // Get best prediction
       let best = prediction.reduce((a, b) => a.probability > b.probability ? a : b);
       const percent = (best.probability * 100).toFixed(1);
 
-      // Show label + probability
       labelContainer.innerHTML = `${best.className} (${percent}%)`;
-
-      // Color-code result
       if (best.className === "Thumbs Up") {
         labelContainer.style.color = "green";
         webcam.canvas.style.borderColor = "green";
@@ -86,7 +129,13 @@
       }
     }
 
-    init();
+    // Hook up button
+    window.onload = () => {
+      labelContainer = document.getElementById("label-container");
+      startBtn = document.getElementById("start-btn");
+      startBtn.addEventListener("click", startCamera);
+      init();
+    }
   </script>
 </body>
 </html>
